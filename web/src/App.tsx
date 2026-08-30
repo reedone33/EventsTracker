@@ -22,6 +22,18 @@ import { DataPanel } from './components/DataPanel'
 import { AnalyticsScreen } from './components/AnalyticsScreen'
 import { ThingDetailScreen } from './components/ThingDetailScreen'
 import { MapScreen } from './components/MapScreen'
+import { SortableThingTile } from './components/SortableThingTile'
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useLocation } from './state/useLocation'
 import { useTheme } from './state/useTheme'
 import type { ThemeChoice } from './state/useTheme'
@@ -67,6 +79,35 @@ export default function App() {
    * `useMemo` re-runs this only when the inputs actually change, so typing in
    * the search box doesn't re-sort the whole list on every keystroke.
    */
+  /**
+   * Reordering is only possible in Manual sort, with the search box empty and
+   * Reorder pressed — exactly the iOS rule. In any other sort the order comes
+   * from the data, so a dragged tile would just spring back.
+   */
+  const canReorder = sortOption === 'manual' && searchText.trim() === '' && isEditing
+
+  /**
+   * What starts a drag.
+   *
+   * The distance and delay thresholds matter: without them, an ordinary tap
+   * registers as a tiny drag and the tile jitters. On touch a short press is
+   * required so that scrolling the page still works normally.
+   */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    // Lets the list be rearranged from the keyboard: tab to a tile, press
+    // space, use the arrow keys, press space again.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    // `over` is empty when a tile is dropped outside the grid; nothing moves.
+    if (!over || active.id === over.id) return
+    store.reorderThings(String(active.id), String(over.id))
+  }
+
   const shownThings = useMemo(
     () => visibleThings(store.things, searchText, sortOption),
     [store.things, searchText, sortOption],
@@ -205,7 +246,11 @@ export default function App() {
             className={`button ${isEditing ? 'button--primary' : ''}`}
             onClick={() => setIsEditing((current) => !current)}
           >
-            {isEditing ? t('action.done') : t('toolbar.edit')}
+            {isEditing
+              ? t('action.done')
+              : sortOption === 'manual'
+                ? t('toolbar.reorder')
+                : t('toolbar.edit')}
           </button>
             </>
           )}
@@ -269,22 +314,55 @@ export default function App() {
       )}
 
       {isEditing && tab === 'things' && (
-        <p className="hint">{t('grid.editModeHint')}</p>
+        <p className="hint">
+          {canReorder
+            ? t('grid.reorderHint')
+            : sortOption === 'manual' && searchText.trim() !== ''
+              ? t('grid.reorderSearchHint')
+              : sortOption === 'manual'
+                ? t('grid.editModeHint')
+                : t('grid.reorderNeedsManual')}
+        </p>
       )}
 
       {tab === 'things' && (
       <main className="grid">
-        {shownThings.map((thing) => (
-          <ThingTile
-            key={thing.id}
-            thing={thing}
-            isEditing={isEditing}
-            onLog={() => handleLog(thing)}
-            onOpen={() => setDialog({ kind: 'detail', thingId: thing.id })}
-            onEdit={() => setDialog({ kind: 'editThing', thing })}
-            onDelete={() => setDialog({ kind: 'deleteThing', thing })}
-          />
-        ))}
+        {canReorder ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={shownThings.map((thing) => thing.id)}
+              // The strategy for a wrapping grid, rather than a single column.
+              strategy={rectSortingStrategy}
+            >
+              {shownThings.map((thing) => (
+                <SortableThingTile
+                  key={thing.id}
+                  thing={thing}
+                  onLog={() => handleLog(thing)}
+                  onOpen={() => setDialog({ kind: 'detail', thingId: thing.id })}
+                  onEdit={() => setDialog({ kind: 'editThing', thing })}
+                  onDelete={() => setDialog({ kind: 'deleteThing', thing })}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          shownThings.map((thing) => (
+            <ThingTile
+              key={thing.id}
+              thing={thing}
+              isEditing={isEditing}
+              onLog={() => handleLog(thing)}
+              onOpen={() => setDialog({ kind: 'detail', thingId: thing.id })}
+              onEdit={() => setDialog({ kind: 'editThing', thing })}
+              onDelete={() => setDialog({ kind: 'deleteThing', thing })}
+            />
+          ))
+        )}
 
         {/* The add button sits at the end of the grid, as it does on iOS.
             It is hidden while searching, where it would be confusing. */}

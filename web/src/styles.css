@@ -597,3 +597,32 @@ textarea.field__input { resize: vertical; font-family: inherit; }
 
 /* Inside the detail screen the map sits in a smaller space. */
 .detail__chart .map { height: 420px; }
+
+/* --- Dragging tiles into order ------------------------------------------- */
+
+.sortable {
+  /* Stops the browser hijacking a press-and-drag to scroll or select, which
+     would otherwise fight the drag on a touchscreen. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Lift the tile being dragged above the others and make it obvious. */
+.sortable--dragging {
+  z-index: 5;
+  opacity: 0.9;
+  cursor: grabbing;
+}
+
+.sortable--dragging .tile {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  transform: scale(1.04);
+}
+
+/* A grab cursor on desktop, so it looks draggable before you try. */
+.sortable .tile { cursor: grab; }
+.sortable--dragging .tile { cursor: grabbing; }
+
+/* The keyboard route: tab to a tile, space, arrow keys, space again. */
+.sortable:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 14px; }

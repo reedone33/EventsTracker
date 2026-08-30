@@ -222,3 +222,15 @@ stylesheet reacts. Dark is declared twice in `src/styles.css`, once under
 explicit choice. That looks like duplication and is not: without both, either
 the device setting or the in-app choice would be ignored. There is a long
 comment at the top of the file saying so.
+
+## Rearranging the tiles
+
+Set the sort menu to **Manual**, press **Reorder**, then drag. On a phone,
+press and hold a tile for a moment first — a plain swipe still scrolls the page.
+
+Reordering is deliberately limited to Manual sort with an empty search box,
+matching the iOS app. In any other sort the order is worked out from the data,
+so a dragged tile would spring straight back; and while searching, the visible
+tiles are only part of the list, so a drop position would not mean anything.
+
+Keyboard: tab to a tile, press space, use the arrow keys, press space to drop.

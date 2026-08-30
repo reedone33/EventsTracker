@@ -20,6 +20,7 @@ export const en = {
   'toolbar.sortBy': 'Sort by',
   'toolbar.data': 'Data',
   'toolbar.edit': 'Edit',
+  'toolbar.reorder': 'Reorder',
   'toolbar.language': 'Language',
   'appearance.label': 'Appearance',
   'appearance.system': 'System',
@@ -55,6 +56,9 @@ export const en = {
 
   // --- Grid ---
   'grid.editModeHint': 'Edit mode: tapping a tile no longer logs an event.',
+  'grid.reorderHint': 'Drag the tiles into the order you want. On a phone, press and hold a tile first.',
+  'grid.reorderNeedsManual': 'Edit mode: tapping a tile no longer logs an event. To rearrange the tiles, switch the sort to Manual.',
+  'grid.reorderSearchHint': 'Clear the search box to rearrange the tiles.',
   'grid.empty': 'Nothing tracked yet. Press + to create your first thing, or use Data to import from the iPhone app.',
   'tile.never': 'Never tracked',
   'tile.last': 'Last: {time}',

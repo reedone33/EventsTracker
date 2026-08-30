@@ -10,6 +10,7 @@ export const it: Translations = {
   'toolbar.sortBy': 'Ordina per',
   'toolbar.data': 'Dati',
   'toolbar.edit': 'Modifica',
+  'toolbar.reorder': 'Riordina',
   'toolbar.language': 'Lingua',
   'appearance.label': 'Aspetto',
   'appearance.system': 'Sistema',
@@ -42,6 +43,9 @@ export const it: Translations = {
   'location.unsupported': 'Questo browser non può fornire la posizione.',
 
   'grid.editModeHint': 'Modalità modifica: toccare un riquadro non registra più un evento.',
+  'grid.reorderHint': 'Trascina i riquadri nell’ordine che preferisci. Sul telefono tieni premuto prima un riquadro.',
+  'grid.reorderNeedsManual': 'Modalità modifica: toccare un riquadro non registra più un evento. Per riordinarli, imposta l’ordinamento su Manuale.',
+  'grid.reorderSearchHint': 'Svuota il campo di ricerca per riordinare i riquadri.',
   'grid.empty': 'Ancora niente. Premi + per creare la tua prima cosa, oppure usa Dati per importare dall’app per iPhone.',
   'tile.never': 'Mai registrato',
   'tile.last': 'Ultimo: {time}',

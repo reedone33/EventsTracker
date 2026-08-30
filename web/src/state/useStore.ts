@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LocationData, Thing } from '../domain/types'
-import { createLogEntry, createThing, newId } from '../domain/things'
+import { createLogEntry, createThing, moveThingById, newId } from '../domain/things'
 import { loadThings, saveThings } from '../storage/storage'
 import type { ImportWarning } from '../storage/normalize'
 
@@ -36,6 +36,8 @@ export interface Store {
   addThing: (name: string, color: Thing['color']) => void
   updateThing: (thingId: string, changes: Partial<Pick<Thing, 'name' | 'color'>>) => void
   deleteThing: (thingId: string) => void
+  /** Rearrange the list: put one thing where another currently sits. */
+  reorderThings: (movedThingId: string, targetThingId: string) => void
   /** Returns the id of the new log entry, so the caller can offer an undo. */
   logEvent: (thingId: string, location?: LocationData | null) => string
   /** Add a log at a chosen moment, rather than "now". */
@@ -119,6 +121,13 @@ export function useStore(): Store {
   const deleteThing = useCallback(
     (thingId: string) => {
       commit((current) => current.filter((thing) => thing.id !== thingId))
+    },
+    [commit],
+  )
+
+  const reorderThings = useCallback(
+    (movedThingId: string, targetThingId: string) => {
+      commit((current) => moveThingById(current, movedThingId, targetThingId))
     },
     [commit],
   )
@@ -229,6 +238,7 @@ export function useStore(): Store {
     addThing,
     updateThing,
     deleteThing,
+    reorderThings,
     logEvent,
     addLog,
     updateLog,

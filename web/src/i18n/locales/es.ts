@@ -10,6 +10,7 @@ export const es: Translations = {
   'toolbar.sortBy': 'Ordenar por',
   'toolbar.data': 'Datos',
   'toolbar.edit': 'Editar',
+  'toolbar.reorder': 'Reordenar',
   'toolbar.language': 'Idioma',
   'appearance.label': 'Apariencia',
   'appearance.system': 'Sistema',
@@ -42,6 +43,9 @@ export const es: Translations = {
   'location.unsupported': 'Este navegador no puede proporcionar la ubicación.',
 
   'grid.editModeHint': 'Modo de edición: tocar una casilla ya no registra un evento.',
+  'grid.reorderHint': 'Arrastra las casillas al orden que quieras. En el móvil, mantén pulsada una casilla primero.',
+  'grid.reorderNeedsManual': 'Modo de edición: tocar una casilla ya no registra un evento. Para reordenarlas, cambia el orden a Manual.',
+  'grid.reorderSearchHint': 'Vacía el cuadro de búsqueda para reordenar las casillas.',
   'grid.empty': 'Aún no hay nada. Pulsa + para crear tu primera cosa, o usa Datos para importar desde la app del iPhone.',
   'tile.never': 'Nunca registrado',
   'tile.last': 'Último: {time}',

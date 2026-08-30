@@ -10,6 +10,7 @@ export const de: Translations = {
   'toolbar.sortBy': 'Sortieren nach',
   'toolbar.data': 'Daten',
   'toolbar.edit': 'Bearbeiten',
+  'toolbar.reorder': 'Anordnen',
   'toolbar.language': 'Sprache',
   'appearance.label': 'Erscheinungsbild',
   'appearance.system': 'System',
@@ -42,6 +43,9 @@ export const de: Translations = {
   'location.unsupported': 'Dieser Browser kann keinen Ort ermitteln.',
 
   'grid.editModeHint': 'Bearbeitungsmodus: Ein Tippen auf eine Kachel trägt nichts mehr ein.',
+  'grid.reorderHint': 'Zieh die Kacheln in die gewünschte Reihenfolge. Auf dem Handy vorher eine Kachel gedrückt halten.',
+  'grid.reorderNeedsManual': 'Bearbeitungsmodus: Ein Tippen auf eine Kachel trägt nichts mehr ein. Zum Umsortieren die Sortierung auf Manuell stellen.',
+  'grid.reorderSearchHint': 'Leere das Suchfeld, um die Kacheln umzusortieren.',
   'grid.empty': 'Noch nichts erfasst. Tippe auf +, um dein erstes Ding anzulegen, oder nutze Daten, um aus der iPhone-App zu importieren.',
   'tile.never': 'Nie erfasst',
   'tile.last': 'Zuletzt: {time}',

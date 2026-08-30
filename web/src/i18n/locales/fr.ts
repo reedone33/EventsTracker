@@ -10,6 +10,7 @@ export const fr: Translations = {
   'toolbar.sortBy': 'Trier par',
   'toolbar.data': 'Données',
   'toolbar.edit': 'Modifier',
+  'toolbar.reorder': 'Réorganiser',
   'toolbar.language': 'Langue',
   'appearance.label': 'Apparence',
   'appearance.system': 'Système',
@@ -42,6 +43,9 @@ export const fr: Translations = {
   'location.unsupported': 'Ce navigateur ne peut pas fournir de localisation.',
 
   'grid.editModeHint': 'Mode modification : toucher une tuile n’enregistre plus d’événement.',
+  'grid.reorderHint': 'Faites glisser les tuiles dans l’ordre voulu. Sur téléphone, appuyez longuement sur une tuile d’abord.',
+  'grid.reorderNeedsManual': 'Mode modification : toucher une tuile n’enregistre plus d’événement. Pour les réorganiser, passez le tri sur Manuel.',
+  'grid.reorderSearchHint': 'Videz le champ de recherche pour réorganiser les tuiles.',
   'grid.empty': 'Rien pour l’instant. Appuyez sur + pour créer votre premier élément, ou utilisez Données pour importer depuis l’app iPhone.',
   'tile.never': 'Jamais enregistré',
   'tile.last': 'Dernier : {time}',

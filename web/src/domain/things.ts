@@ -111,3 +111,41 @@ export function visibleThings(
 export function totalLogCount(things: Thing[]): number {
   return things.reduce((sum, thing) => sum + thing.logs.length, 0)
 }
+
+/**
+ * Move one thing to a new position in the list.
+ *
+ * This is what "Manual" sorting stores: the order of the array IS the order on
+ * screen, so rearranging the tiles means rearranging this list. Ported from the
+ * iOS `moveThing(from:to:)`.
+ *
+ * Returns a NEW array — the original is left alone, which is what React needs
+ * in order to notice that anything changed.
+ */
+export function moveThing(things: Thing[], fromIndex: number, toIndex: number): Thing[] {
+  // Out-of-range or pointless moves return the list untouched, so a stray drag
+  // can never scramble or drop an item.
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= things.length ||
+    toIndex >= things.length
+  ) {
+    return things
+  }
+
+  const next = [...things]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next
+}
+
+/** The same move, expressed as "put THIS thing where THAT one is". */
+export function moveThingById(things: Thing[], movedId: string, targetId: string): Thing[] {
+  return moveThing(
+    things,
+    things.findIndex((thing) => thing.id === movedId),
+    things.findIndex((thing) => thing.id === targetId),
+  )
+}
