@@ -276,3 +276,19 @@ This only works because `index.html` sets `viewport-fit=cover`. Without that,
 the insets all report zero and the padding silently does nothing.
 
 On a desktop every inset is zero, so the layout is unchanged there.
+
+## The analytics screen
+
+Above the chart: which chart, the date range, and how to group. Below it: the
+key, and a folded-away **Filter** section.
+
+The filter sits below the chart deliberately. The chart is what the screen is
+for, and with 27 things a wall of filter chips above it means scrolling past the
+controls to reach what you came to see.
+
+Collapsed, that section is simply the legend — which line is which. Expanded, the
+same list becomes switches, with **All**, **Busiest 5** and **None** at the top.
+
+The chart opens showing everything. Past about eight lines a chart gets hard to
+read and there are only eight reliably distinct colours, so **Busiest 5** is
+there as a one-tap way back to something legible.

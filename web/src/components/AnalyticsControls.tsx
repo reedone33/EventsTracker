@@ -6,24 +6,17 @@
  * to be about drawing, and this one about choosing.
  */
 
-import type { Thing } from '../domain/types'
 import type { ChartType, DateGranularity, TimeDetailScale } from '../domain/analytics'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
-import { colorToCss, readableTextColor } from '../domain/color'
 import { toDateInputValue } from '../domain/dates'
 
 interface AnalyticsControlsProps {
-  things: Thing[]
-  selectedThingIds: Set<string>
   chartType: ChartType
   granularity: DateGranularity
   timeScale: TimeDetailScale
   startDate: Date
   endDate: Date
-  onToggleThing: (thingId: string) => void
-  onSelectAll: () => void
-  onClearAll: () => void
   onChartTypeChange: (type: ChartType) => void
   onGranularityChange: (granularity: DateGranularity) => void
   onTimeScaleChange: (scale: TimeDetailScale) => void
@@ -48,16 +41,11 @@ const TIME_SCALES: TimeDetailScale[] = ['hourly', 'byMinute']
 export function AnalyticsControls(props: AnalyticsControlsProps) {
   const { t } = useI18n()
   const {
-    things,
-    selectedThingIds,
     chartType,
     granularity,
     timeScale,
     startDate,
     endDate,
-    onToggleThing,
-    onSelectAll,
-    onClearAll,
     onChartTypeChange,
     onGranularityChange,
     onTimeScaleChange,
@@ -82,38 +70,6 @@ export function AnalyticsControls(props: AnalyticsControlsProps) {
           onClick={() => onChartTypeChange('timeOfDay')}
         >
           {t('chart.timeOfDay')}
-        </button>
-      </div>
-
-      {/* Which things to include. Each chip wears its own colour, so the
-          filter and the chart agree at a glance. */}
-      <div className="controls__row controls__row--wrap">
-        <span className="controls__label">{t('chart.show')}</span>
-        {things.map((thing) => {
-          const isOn = selectedThingIds.has(thing.id)
-          return (
-            <button
-              key={thing.id}
-              type="button"
-              className={`chip ${isOn ? 'chip--on' : ''}`}
-              style={
-                isOn
-                  ? { backgroundColor: colorToCss(thing.color), color: readableTextColor(thing.color) }
-                  : undefined
-              }
-              onClick={() => onToggleThing(thing.id)}
-              aria-pressed={isOn}
-            >
-              {thing.name}
-            </button>
-          )
-        })}
-
-        <button type="button" className="button button--small" onClick={onSelectAll}>
-          {t('action.all')}
-        </button>
-        <button type="button" className="button button--small" onClick={onClearAll}>
-          {t('action.none')}
         </button>
       </div>
 

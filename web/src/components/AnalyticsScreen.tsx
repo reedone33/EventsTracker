@@ -16,32 +16,35 @@ import {
   buildTimeOfDayData,
   filterThingsWithLogs,
 } from '../domain/analytics'
-import { colorToCss } from '../domain/color'
 import { useI18n } from '../i18n'
 import { AnalyticsControls } from './AnalyticsControls'
 import { FrequencyChart } from './FrequencyChart'
 import { TimeOfDayChart } from './TimeOfDayChart'
+import { ThingFilterPanel } from './ThingFilterPanel'
 
 interface AnalyticsScreenProps {
   things: Thing[]
 }
 
 /**
- * How many things the chart starts with.
+ * How many things "Busiest" picks.
  *
- * The iOS app selected everything by default, which was fine when there were a
- * handful of things. With 27 it draws 27 overlapping lines that no one can
- * read, and past eight there are no longer enough visually distinct colours to
- * tell the lines apart anyway. So the chart opens with the most-logged few and
- * lets you add the rest — the All button is right there.
+ * The chart opens showing everything. Past about eight lines a chart becomes
+ * hard to read, and there are only eight reliably distinct colours, so the
+ * filter panel offers this as a one-tap way back to something legible.
  */
-const DEFAULT_SELECTION_COUNT = 5
+const BUSIEST_COUNT = 5
 
-/** The things with the most logs — the ones with enough history to show a trend. */
-function defaultSelection(things: Thing[]): Set<string> {
+/** Everything — the chart's opening state. */
+function allSelection(things: Thing[]): Set<string> {
+  return new Set(things.map((thing) => thing.id))
+}
+
+/** The things with the most logs — those with enough history to show a trend. */
+function busiestSelection(things: Thing[]): Set<string> {
   const busiest = [...things]
     .sort((a, b) => b.logs.length - a.logs.length)
-    .slice(0, DEFAULT_SELECTION_COUNT)
+    .slice(0, BUSIEST_COUNT)
   return new Set(busiest.map((thing) => thing.id))
 }
 
@@ -60,7 +63,7 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
   const [timeScale, setTimeScale] = useState<TimeDetailScale>('hourly')
   const [startDate, setStartDate] = useState<Date>(defaultStartDate)
   const [endDate, setEndDate] = useState<Date>(() => new Date())
-  const [selectedThingIds, setSelectedThingIds] = useState<Set<string>>(() => defaultSelection(things))
+  const [selectedThingIds, setSelectedThingIds] = useState<Set<string>>(() => allSelection(things))
 
   // Data arrives from storage a moment after the first render, so the opening
   // selection has to be made when it lands rather than on mount.
@@ -78,7 +81,7 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
     // First time real data appears: open on the busiest few.
     if (!hasChosenOpeningSelection.current) {
       hasChosenOpeningSelection.current = true
-      setSelectedThingIds(defaultSelection(things))
+      setSelectedThingIds(allSelection(things))
       return
     }
 
@@ -90,7 +93,7 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
       // default rather than showing an empty chart with no explanation. An
       // empty selection the user made deliberately (the None button) is left
       // alone — it didn't get emptied by deletion, so there is nothing to fix.
-      if (current.size > 0 && stillValid.size === 0) return defaultSelection(things)
+      if (current.size > 0 && stillValid.size === 0) return allSelection(things)
 
       return stillValid.size === current.size ? current : stillValid
     })
@@ -139,16 +142,11 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
   return (
     <section className="analytics">
       <AnalyticsControls
-        things={things}
-        selectedThingIds={selectedThingIds}
         chartType={chartType}
         granularity={granularity}
         timeScale={timeScale}
         startDate={startDate}
         endDate={endDate}
-        onToggleThing={toggleThing}
-        onSelectAll={() => setSelectedThingIds(new Set(things.map((thing) => thing.id)))}
-        onClearAll={() => setSelectedThingIds(new Set())}
         onChartTypeChange={setChartType}
         onGranularityChange={setGranularity}
         onTimeScaleChange={setTimeScale}
@@ -160,13 +158,6 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
         {chartType === 'frequency' ? t('chart.titleFrequency') : t('chart.timeOfDay')}
       </h2>
 
-      {/* Explain the default rather than letting it look like data is missing. */}
-      {selectedThingIds.size < things.length && (
-        <p className="hint">
-          {t('chart.showingCount', { shown: selectedThingIds.size, total: things.length })}
-        </p>
-      )}
-
       {selectedThingIds.size === 0 ? (
         <p className="empty">{t('chart.nothingSelected')}</p>
       ) : chartType === 'frequency' ? (
@@ -175,19 +166,17 @@ export function AnalyticsScreen({ things }: AnalyticsScreenProps) {
         <TimeOfDayChart points={timeOfDayPoints} legend={legend} />
       )}
 
-      {/* The legend sits below the chart, as it does on iOS, and lists every
-          selected thing — including any with no data in this range, so nothing
-          disappears without explanation. */}
-      {legend.length > 0 && (
-        <ul className="legend">
-          {legend.map((entry) => (
-            <li key={entry.thingId} className="legend__item">
-              <span className="legend__swatch" style={{ backgroundColor: colorToCss(entry.color) }} />
-              {entry.name}
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Key and filter together, below the chart: the key is needed every
+          time, the filter only occasionally, so the latter stays folded away. */}
+      <ThingFilterPanel
+        things={things}
+        legend={legend}
+        selectedThingIds={selectedThingIds}
+        onToggleThing={toggleThing}
+        onSelectAll={() => setSelectedThingIds(allSelection(things))}
+        onSelectBusiest={() => setSelectedThingIds(busiestSelection(things))}
+        onClearAll={() => setSelectedThingIds(new Set())}
+      />
     </section>
   )
 }
