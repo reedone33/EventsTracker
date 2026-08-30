@@ -117,7 +117,7 @@ export const fr: Translations = {
   'timescale.byMinute': 'À la minute',
 
   'detail.rename': 'Renommer',
-  'detail.exportCsv': 'Exporter en CSV',
+  'detail.exportCsv': 'Exporter',
   'detail.addEntry': 'Ajouter une entrée',
   'detail.history': 'Historique',
   'detail.noEntries': 'Aucune entrée pour l’instant. Appuyez sur « Ajouter une entrée » pour en créer une.',

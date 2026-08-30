@@ -105,8 +105,12 @@ export function ThingDetailScreen(props: ThingDetailScreenProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <header className="detail__header">
-          <span className="detail__swatch" style={{ backgroundColor: colorToCss(thing.color) }} />
-          <h2 className="detail__title">{thing.name}</h2>
+          {/* The name gets its own row so the buttons below it can stay on a
+              single line, even on a narrow phone. */}
+          <div className="detail__titlerow">
+            <span className="detail__swatch" style={{ backgroundColor: colorToCss(thing.color) }} />
+            <h2 className="detail__title">{thing.name}</h2>
+          </div>
 
           <div className="detail__actions">
             <button type="button" className="button" onClick={onEditThing}>

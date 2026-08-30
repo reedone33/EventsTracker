@@ -136,7 +136,7 @@ export const en = {
 
   // --- Thing detail ---
   'detail.rename': 'Rename',
-  'detail.exportCsv': 'Export CSV',
+  'detail.exportCsv': 'Export',
   'detail.addEntry': 'Add entry',
   'detail.history': 'History',
   'detail.noEntries': 'No entries yet. Press “Add entry” to record one.',

@@ -70,6 +70,27 @@ interface UndoState {
 /** The sort options, in the order they appear in the menu. */
 const SORT_OPTIONS: SortOption[] = ['dateCreated', 'ascending', 'descending', 'manual']
 
+/** Where the chosen sort order is remembered between visits. */
+const SORT_KEY = 'eventstracker.sort'
+
+/**
+ * The sort order to open with: whatever was chosen last time, or newest-first
+ * for a first visit.
+ *
+ * This matters most for Manual: someone who has arranged their tiles by hand
+ * wants to see that arrangement on opening, not have it silently replaced by
+ * date order every time.
+ */
+function readStoredSort(): SortOption {
+  try {
+    const stored = window.localStorage.getItem(SORT_KEY)
+    if (SORT_OPTIONS.includes(stored as SortOption)) return stored as SortOption
+  } catch {
+    // Blocked storage just means no remembered choice.
+  }
+  return 'dateCreated'
+}
+
 export default function App() {
   const { t, tc, language, setLanguage } = useI18n()
   const store = useStore()
@@ -79,7 +100,17 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('things')
   const [searchText, setSearchText] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [sortOption, setSortOption] = useState<SortOption>('dateCreated')
+  const [sortOption, setSortOptionState] = useState<SortOption>(readStoredSort)
+
+  /** Change the sort order and remember it for next time. */
+  function setSortOption(next: SortOption) {
+    setSortOptionState(next)
+    try {
+      window.localStorage.setItem(SORT_KEY, next)
+    } catch {
+      // Not remembering the choice is harmless.
+    }
+  }
   const [isEditing, setIsEditing] = useState(false)
   const [dialog, setDialog] = useState<ActiveDialog>({ kind: 'none' })
   const [undo, setUndo] = useState<UndoState | null>(null)

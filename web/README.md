@@ -244,7 +244,7 @@ a narrow phone.
 | Icon | What it does |
 | --- | --- |
 | Magnifier | Shows the search box. Closing it clears the search. |
-| Two arrows | Sort order: Date Created, A–Z, Z–A, Manual |
+| Two arrows | Sort order: Date Created, A–Z, Z–A, Manual. Remembered between visits. |
 | Half-filled circle | Appearance: System, Light, Dark |
 | Map pin | Location tagging on or off. Lit when recording. |
 | Three lines | The main menu |

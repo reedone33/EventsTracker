@@ -117,7 +117,7 @@ export const de: Translations = {
   'timescale.byMinute': 'Minutengenau',
 
   'detail.rename': 'Umbenennen',
-  'detail.exportCsv': 'CSV exportieren',
+  'detail.exportCsv': 'Export',
   'detail.addEntry': 'Eintrag hinzufügen',
   'detail.history': 'Verlauf',
   'detail.noEntries': 'Noch keine Einträge. Tippe auf „Eintrag hinzufügen“, um einen zu erfassen.',

@@ -117,7 +117,7 @@ export const es: Translations = {
   'timescale.byMinute': 'Por minuto',
 
   'detail.rename': 'Renombrar',
-  'detail.exportCsv': 'Exportar CSV',
+  'detail.exportCsv': 'Exportar',
   'detail.addEntry': 'Añadir registro',
   'detail.history': 'Historial',
   'detail.noEntries': 'Aún no hay registros. Pulsa «Añadir registro» para crear uno.',

@@ -117,7 +117,7 @@ export const it: Translations = {
   'timescale.byMinute': 'Al minuto',
 
   'detail.rename': 'Rinomina',
-  'detail.exportCsv': 'Esporta CSV',
+  'detail.exportCsv': 'Esporta',
   'detail.addEntry': 'Aggiungi voce',
   'detail.history': 'Cronologia',
   'detail.noEntries': 'Ancora nessuna voce. Premi «Aggiungi voce» per registrarne una.',

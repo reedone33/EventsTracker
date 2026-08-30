@@ -639,15 +639,33 @@ body {
 
 .detail__header {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 6px;
 }
 
+.detail__titlerow { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .detail__swatch { width: 20px; height: 20px; border-radius: 6px; flex: none; }
-.detail__title { margin: 0; font-size: 1.3rem; flex: 1 1 auto; overflow-wrap: anywhere; }
-.detail__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.detail__title { margin: 0; font-size: 1.3rem; overflow-wrap: anywhere; }
+
+/* One line, always. The buttons shrink their padding before they wrap, and
+   the row scrolls sideways rather than stacking if a translation makes the
+   labels longer than the screen. */
+.detail__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  /* Room for the focus ring, which would otherwise be clipped by the scroll. */
+  padding: 2px;
+  margin: -2px;
+}
+
+.detail__actions .button {
+  white-space: nowrap;
+  flex: none;
+  padding: 8px 12px;
+}
 .detail__summary { margin: 0 0 16px; color: var(--text-muted); font-size: 0.9rem; }
 .detail__chart { margin-top: 12px; }
 
