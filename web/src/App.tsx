@@ -206,7 +206,7 @@ export default function App() {
 
   // --- Normal state --------------------------------------------------------
   return (
-    <div className="app">
+    <div className={`app ${isEditing && tab === 'things' ? 'app--editing' : ''}`}>
       <header className="toolbar">
         <h1 className="toolbar__title">{t('app.title')}</h1>
 
@@ -383,17 +383,7 @@ export default function App() {
         </div>
       )}
 
-      {isEditing && tab === 'things' && (
-        <p className="hint">
-          {canReorder
-            ? t('grid.reorderHint')
-            : sortOption === 'manual' && searchText.trim() !== ''
-              ? t('grid.reorderSearchHint')
-              : sortOption === 'manual'
-                ? t('grid.editModeHint')
-                : t('grid.reorderNeedsManual')}
-        </p>
-      )}
+
 
       {tab === 'things' && (
         <main>
@@ -438,6 +428,27 @@ export default function App() {
 
       {tab === 'things' && store.things.length === 0 && (
         <p className="empty">{t('grid.empty')}</p>
+      )}
+
+      {isEditing && tab === 'things' && (
+        <div className="edit-bar" role="status">
+          <p className="edit-bar__hint">
+            {canReorder
+              ? t('grid.reorderHint')
+              : sortOption === 'manual' && searchText.trim() !== ''
+                ? t('grid.reorderSearchHint')
+                : sortOption === 'manual'
+                  ? t('grid.editModeHint')
+                  : t('grid.reorderNeedsManual')}
+          </p>
+          <button
+            type="button"
+            className="button button--primary edit-bar__done"
+            onClick={() => setIsEditing(false)}
+          >
+            {t('action.done')}
+          </button>
+        </div>
       )}
 
       {undo && (

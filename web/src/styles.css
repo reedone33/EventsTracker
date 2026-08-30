@@ -979,3 +979,60 @@ textarea.field__input { resize: vertical; font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .category__chevron { transition: none; }
 }
+
+/* --- The edit-mode bar ----------------------------------------------------- */
+
+/*
+  Pinned to the bottom of the screen for as long as edit mode is on.
+
+  Edit mode changes what tapping a tile does, so it needs a way out that is
+  visible from anywhere on the page — not one buried in a menu at the top,
+  which means scrolling back up from wherever you happen to be.
+*/
+.edit-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /*
+    Above the page, below the dialogs.
+
+    The overlay behind a dialog sits at 10. Anything higher would leave this bar
+    floating on top of an open dialog — visible, tappable, and wrong.
+  */
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  /* Clear of the home indicator on a phone. */
+  padding: 12px calc(env(safe-area-inset-right, 0px) + 16px)
+    calc(env(safe-area-inset-bottom, 0px) + 12px)
+    calc(env(safe-area-inset-left, 0px) + 16px);
+
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.22);
+}
+
+.edit-bar__hint {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  /* The hint gives way before the button does — the button is the point. */
+  min-width: 0;
+}
+
+.edit-bar__done {
+  flex: none;
+  /* A comfortable thumb target, and unmistakably the way out. */
+  min-width: 92px;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+/* Room at the bottom of the page so the last row of tiles is not left sitting
+   underneath the bar. */
+.app--editing { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); }
