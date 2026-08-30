@@ -1,0 +1,6 @@
+node_modules
+dist
+.DS_Store
+*.local
+# Temporary files Vite writes while starting up.
+vite.config.ts.timestamp-*

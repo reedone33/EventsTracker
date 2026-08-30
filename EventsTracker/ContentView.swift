@@ -7,7 +7,7 @@ extension UUID: Identifiable {
 
 /// Options for sorting the list of Things.
 enum SortOption: CaseIterable, Identifiable {
-    case dateCreated, ascending, descending
+    case dateCreated, ascending, descending, manual
 
     var id: Self { self }
 
@@ -19,6 +19,8 @@ enum SortOption: CaseIterable, Identifiable {
             return "A-Z"
         case .descending:
             return "Z-A"
+        case .manual:
+            return "Manual"
         }
     }
 }
@@ -38,6 +40,7 @@ struct ContentView: View {
     @State private var thingToDelete: Thing? = nil // For the confirmation alert
     @State private var searchText = ""
     @State private var sortOption: SortOption = .dateCreated
+    @State private var editMode: EditMode = .inactive
     
     @AppStorage("colorSchemeSetting") private var colorSchemeSetting: String = "system"
 
@@ -64,6 +67,8 @@ struct ContentView: View {
             return searchedThings.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         case .descending:
             return searchedThings.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
+        case .manual:
+            return searchedThings
         }
     }
     
@@ -93,18 +98,48 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    ForEach(filteredThings) { thing in
-                        ThingGridItem(thing: thing, isEditing: $isEditing, tappedThingId: $tappedThingId, selectedThingId: $selectedThingId, thingToDelete: $thingToDelete, logEvent: logEvent)
-                    }
+            Group {
+                if sortOption == .manual {
+                    List {
+                        if !searchText.isEmpty {
+                            Section {
+                                Text("Clear the search field to reorder items manually.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
 
-                    // The "Add Thing" button always appears at the end of the grid.
-                    addThingButton
+                        Section(header: Text("Drag to reorder")) {
+                            ForEach(filteredThings) { thing in
+                                ThingListRow(
+                                    thing: thing,
+                                    isEditing: $isEditing,
+                                    selectedThingId: $selectedThingId,
+                                    thingToDelete: $thingToDelete,
+                                    logEvent: logEvent
+                                )
+                            }
+                            .onMove(perform: searchText.isEmpty ? moveThing : { _, _ in })
+                            .disabled(!searchText.isEmpty)
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                            ForEach(filteredThings) { thing in
+                                ThingGridItem(thing: thing, isEditing: $isEditing, tappedThingId: $tappedThingId, selectedThingId: $selectedThingId, thingToDelete: $thingToDelete, logEvent: logEvent)
+                            }
+
+                            // The "Add Thing" button always appears at the end of the grid.
+                            addThingButton
+                        }
+                        .padding(16)
+                    }
                 }
-                .padding(16)
             }
             .navigationTitle("Events Tracker")
+            .environment(\.editMode, $editMode)
             .searchable(text: $searchText, prompt: "Search Things")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -153,9 +188,20 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(isEditing ? "Done" : "Edit") {
-                        withAnimation {
-                            isEditing.toggle()
+                    if sortOption == .manual {
+                        Button(editMode == .active ? "Done" : "Reorder") {
+                            withAnimation {
+                                let active = editMode == .active
+                                isEditing = !active
+                                editMode = active ? .inactive : .active
+                            }
+                        }
+                    } else {
+                        Button(isEditing ? "Done" : "Edit") {
+                            withAnimation {
+                                isEditing.toggle()
+                                editMode = isEditing ? .active : .inactive
+                            }
                         }
                     }
                 }
@@ -236,6 +282,60 @@ struct ContentView: View {
         withAnimation {
             store.things.removeAll { $0.id == thing.id }
             store.save()
+        }
+    }
+
+    private func moveThing(from source: IndexSet, to destination: Int) {
+        withAnimation {
+            store.things.move(fromOffsets: source, toOffset: destination)
+            store.save()
+        }
+    }
+}
+
+/// A row view used for manual reordering in the main list.
+struct ThingListRow: View {
+    let thing: Thing
+    @Binding var isEditing: Bool
+    @Binding var selectedThingId: UUID?
+    @Binding var thingToDelete: Thing?
+    let logEvent: (Thing) -> Void
+
+    var body: some View {
+        HStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(thing.color))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(thing.name)
+                    .font(.headline)
+                Text(thing.logs.isEmpty ? "No logs" : "Logs: \(thing.logs.count)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+
+            if isEditing {
+                Button(action: { thingToDelete = thing }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(BorderlessButtonStyle())
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !isEditing else { return }
+            selectedThingId = thing.id
+        }
+        .onLongPressGesture(minimumDuration: 0.2) {
+            guard !isEditing else { return }
+            logEvent(thing)
         }
     }
 }

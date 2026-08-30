@@ -1,0 +1,13 @@
+# macOS folder metadata
+.DS_Store
+
+# Xcode per-user state: window positions, breakpoints, scheme selections.
+# Personal to one machine, and a constant source of pointless diffs.
+xcuserdata/
+*.xcuserstate
+
+# Build output
+build/
+DerivedData/
+
+# The web app's own ignores live in web/.gitignore
