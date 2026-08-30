@@ -234,3 +234,27 @@ so a dragged tile would spring straight back; and while searching, the visible
 tiles are only part of the list, so a drop position would not mean anything.
 
 Keyboard: tab to a tile, press space, use the arrow keys, press space to drop.
+
+## The toolbar
+
+Five icons, the way the iOS app's toolbar worked:
+
+| Icon | What it does |
+| --- | --- |
+| Magnifier | Shows the search box. Closing it clears the search. |
+| Two arrows | Sort order: Date Created, A–Z, Z–A, Manual |
+| Half-filled circle | Appearance: System, Light, Dark |
+| Map pin | Location tagging on or off. Lit when recording. |
+| Three lines | The main menu |
+
+The main menu holds everything reached now and then rather than constantly:
+
+- **View** — Things, Analytics, Map
+- **Actions** — Data (import, export, backup), and Edit / Reorder
+- **Language** — the six languages
+
+An icon that is lit blue means that setting is currently on — search in use, or
+location being recorded. The icons are 44px, the size a fingertip reliably hits.
+
+Choosing **Edit** from the menu also switches to the Things screen, since
+editing only means anything there.

@@ -86,37 +86,141 @@ body {
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
 }
 
 .toolbar__title {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   margin: 0;
   flex: 1 1 auto;
+  /* Keeps the icons on screen on a narrow phone rather than pushing them off. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.toolbar__controls {
+.toolbar__icons {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --- Icon buttons --------------------------------------------------------- */
+
+.icon-btn {
+  /* 44px is the size a fingertip reliably hits; anything smaller gets missed
+     on a phone even when it looks fine on a desktop. */
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) { background: var(--surface); border-color: var(--border); }
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Marks a setting that is currently switched on — search in use, location
+   being recorded — so the state is visible without a text label. */
+.icon-btn--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.icon-btn--on:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+
+/* --- Menus ---------------------------------------------------------------- */
+
+.icon-menu { position: relative; }
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  min-width: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  z-index: 30;
+}
+
+.menu--right { right: 0; }
+.menu--left { left: 0; }
+
+/* A hairline between groups, so View / Actions / Language read as separate. */
+.menu__section + .menu__section {
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.menu__heading {
+  margin: 4px 10px 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.menu__item {
+  display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
 }
 
-.toolbar__search,
-.toolbar__language select,
-.toolbar__sort select {
-  padding: 8px 10px;
-  font-size: 0.95rem;
+.menu__item:hover { background: var(--bg); }
+.menu__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.menu__item--on { font-weight: 600; }
+
+/* Fixed-width column for the tick, so labels line up either way. */
+.menu__tick {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex: none;
+}
+
+/* --- Search bar ----------------------------------------------------------- */
+
+.searchbar { margin-bottom: 14px; }
+
+.searchbar__input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--text);
 }
 
-.toolbar__search { min-width: 180px; }
+.searchbar__input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 /* --- Buttons ------------------------------------------------------------ */
 
@@ -346,8 +450,6 @@ body {
 }
 
 /* --- Tabs and segmented controls ----------------------------------------- */
-
-.tabs { display: flex; gap: 0; }
 
 .segment {
   padding: 8px 14px;

@@ -23,6 +23,15 @@ import { AnalyticsScreen } from './components/AnalyticsScreen'
 import { ThingDetailScreen } from './components/ThingDetailScreen'
 import { MapScreen } from './components/MapScreen'
 import { SortableThingTile } from './components/SortableThingTile'
+import { IconMenu } from './components/IconMenu'
+import type { MenuSection } from './components/IconMenu'
+import {
+  AppearanceIcon,
+  LocationIcon,
+  MenuIcon,
+  SearchIcon,
+  SortIcon,
+} from './components/Icons'
 import {
   DndContext,
   KeyboardSensor,
@@ -69,6 +78,7 @@ export default function App() {
 
   const [tab, setTab] = useState<Tab>('things')
   const [searchText, setSearchText] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [sortOption, setSortOption] = useState<SortOption>('dateCreated')
   const [isEditing, setIsEditing] = useState(false)
   const [dialog, setDialog] = useState<ActiveDialog>({ kind: 'none' })
@@ -170,123 +180,148 @@ export default function App() {
       <header className="toolbar">
         <h1 className="toolbar__title">{t('app.title')}</h1>
 
-        <div className="toolbar__controls">
-          <div className="tabs" role="group" aria-label={t('toolbar.screen')}>
-            <button
-              type="button"
-              className={`segment ${tab === 'things' ? 'segment--on' : ''}`}
-              onClick={() => setTab('things')}
-            >
-              {t('tab.things')}
-            </button>
-            <button
-              type="button"
-              className={`segment ${tab === 'analytics' ? 'segment--on' : ''}`}
-              onClick={() => setTab('analytics')}
-            >
-              {t('tab.analytics')}
-            </button>
-            <button
-              type="button"
-              className={`segment ${tab === 'map' ? 'segment--on' : ''}`}
-              onClick={() => setTab('map')}
-            >
-              {t('tab.map')}
-            </button>
-          </div>
-
-          {/* The location switch. Off by default: a permission prompt before
-              the user has asked for anything is the classic web annoyance, and
-              someone who only wants their charts should never see one. */}
+        {/* Icons only, so the row still fits on a phone. Everything that used
+            to be a labelled button is now either an icon with a menu behind
+            it, or an entry in the main menu. */}
+        <div className="toolbar__icons">
           <button
             type="button"
-            className={`button ${location.status === 'on' ? 'button--primary' : ''}`}
-            onClick={() => (location.status === 'off' ? location.enable() : location.disable())}
-            disabled={location.status === 'unsupported'}
-            title={t('location.hint')}
+            className={`icon-btn ${isSearchOpen || searchText ? 'icon-btn--on' : ''}`}
+            onClick={() => {
+              // Closing the search also clears it — leaving a hidden filter in
+              // place would silently hide tiles with no visible explanation.
+              if (isSearchOpen) setSearchText('')
+              setIsSearchOpen((open) => !open)
+            }}
+            aria-label={t('toolbar.search')}
+            aria-expanded={isSearchOpen}
+            title={t('toolbar.search')}
           >
-            {location.status === 'on'
-              ? t('location.tagging')
-              : location.status === 'requesting'
-                ? t('location.locating')
-                : t('location.tag')}
+            <SearchIcon />
           </button>
 
-          {tab === 'things' && (
-            <>
+          <IconMenu
+            icon={<SortIcon />}
+            label={t('toolbar.sortBy')}
+            sections={[
+              {
+                title: t('toolbar.sortBy'),
+                items: SORT_OPTIONS.map((option) => ({
+                  key: option,
+                  label: t(`sort.${option}` as TranslationKey),
+                  selected: sortOption === option,
+                  onSelect: () => setSortOption(option),
+                })),
+              },
+            ]}
+          />
+
+          <IconMenu
+            icon={<AppearanceIcon />}
+            label={t('appearance.label')}
+            sections={[
+              {
+                title: t('appearance.label'),
+                items: (['system', 'light', 'dark'] as ThemeChoice[]).map((option) => ({
+                  key: option,
+                  label: t(`appearance.${option}` as TranslationKey),
+                  selected: theme.choice === option,
+                  onSelect: () => theme.setChoice(option),
+                })),
+              },
+            ]}
+          />
+
+          <button
+            type="button"
+            className={`icon-btn ${location.status === 'on' ? 'icon-btn--on' : ''}`}
+            onClick={() => (location.status === 'off' ? location.enable() : location.disable())}
+            disabled={location.status === 'unsupported'}
+            aria-pressed={location.status === 'on'}
+            aria-label={t('location.tag')}
+            title={
+              location.status === 'on'
+                ? t('location.tagging')
+                : location.status === 'requesting'
+                  ? t('location.locating')
+                  : t('location.hint')
+            }
+          >
+            <LocationIcon />
+          </button>
+
+          {/* The main menu: which screen to show, the occasional actions, and
+              the language. All things reached now and then rather than
+              constantly, which is why they are behind one icon. */}
+          <IconMenu
+            icon={<MenuIcon />}
+            label={t('toolbar.menu')}
+            sections={
+              [
+                {
+                  title: t('menu.view'),
+                  items: (['things', 'analytics', 'map'] as Tab[]).map((option) => ({
+                    key: option,
+                    label: t(`tab.${option}` as TranslationKey),
+                    selected: tab === option,
+                    onSelect: () => setTab(option),
+                  })),
+                },
+                {
+                  title: t('menu.actions'),
+                  items: [
+                    {
+                      key: 'data',
+                      label: t('toolbar.data'),
+                      onSelect: () => setDialog({ kind: 'data' }),
+                    },
+                    {
+                      key: 'edit',
+                      label: isEditing
+                        ? t('action.done')
+                        : sortOption === 'manual'
+                          ? t('toolbar.reorder')
+                          : t('toolbar.edit'),
+                      selected: isEditing,
+                      onSelect: () => {
+                        // Editing only means anything on the tile grid, so
+                        // turning it on brings that screen with it.
+                        setTab('things')
+                        setIsEditing((current) => !current)
+                      },
+                    },
+                  ],
+                },
+                {
+                  title: t('toolbar.language'),
+                  items: (Object.keys(LANGUAGES) as LanguageCode[]).map((code) => ({
+                    key: code,
+                    label: LANGUAGES[code],
+                    selected: language === code,
+                    onSelect: () => setLanguage(code),
+                  })),
+                },
+              ] satisfies MenuSection[]
+            }
+          />
+        </div>
+      </header>
+
+      {/* The search field appears under the toolbar when its icon is pressed,
+          rather than taking up a permanent slot in the row. */}
+      {isSearchOpen && (
+        <div className="searchbar">
           <input
-            className="toolbar__search"
+            className="searchbar__input"
             type="search"
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder={t('toolbar.search')}
             aria-label={t('toolbar.search')}
+            autoFocus
           />
-
-          <label className="toolbar__sort">
-            <span className="visually-hidden">{t('toolbar.sortBy')}</span>
-            <select
-              value={sortOption}
-              onChange={(event) => setSortOption(event.target.value as SortOption)}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`sort.${option}` as TranslationKey)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button type="button" className="button" onClick={() => setDialog({ kind: 'data' })}>
-            {t('toolbar.data')}
-          </button>
-
-          <button
-            type="button"
-            className={`button ${isEditing ? 'button--primary' : ''}`}
-            onClick={() => setIsEditing((current) => !current)}
-          >
-            {isEditing
-              ? t('action.done')
-              : sortOption === 'manual'
-                ? t('toolbar.reorder')
-                : t('toolbar.edit')}
-          </button>
-            </>
-          )}
-
-          {/* Every language is named in its own language, so someone who has
-              landed in the wrong one can still find theirs. */}
-          <label className="toolbar__language">
-            <span className="visually-hidden">{t('appearance.label')}</span>
-            <select
-              value={theme.choice}
-              onChange={(event) => theme.setChoice(event.target.value as ThemeChoice)}
-              title={t('appearance.label')}
-            >
-              {(['system', 'light', 'dark'] as ThemeChoice[]).map((option) => (
-                <option key={option} value={option}>
-                  {t(`appearance.${option}` as TranslationKey)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="toolbar__language">
-            <span className="visually-hidden">{t('toolbar.language')}</span>
-            <select
-              value={language}
-              onChange={(event) => setLanguage(event.target.value as LanguageCode)}
-            >
-              {(Object.keys(LANGUAGES) as LanguageCode[]).map((code) => (
-                <option key={code} value={code}>
-                  {LANGUAGES[code]}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
-      </header>
+      )}
 
       {store.saveError && (
         <p className="notice notice--error">{t(store.saveError as TranslationKey)}</p>
