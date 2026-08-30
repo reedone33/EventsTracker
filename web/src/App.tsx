@@ -23,6 +23,8 @@ import { AnalyticsScreen } from './components/AnalyticsScreen'
 import { ThingDetailScreen } from './components/ThingDetailScreen'
 import { MapScreen } from './components/MapScreen'
 import { useLocation } from './state/useLocation'
+import { useTheme } from './state/useTheme'
+import type { ThemeChoice } from './state/useTheme'
 import type { ImportWarning } from './storage/normalize'
 
 /** Which pop-up, if any, is currently open. */
@@ -51,6 +53,7 @@ export default function App() {
   const { t, tc, language, setLanguage } = useI18n()
   const store = useStore()
   const location = useLocation()
+  const theme = useTheme()
 
   const [tab, setTab] = useState<Tab>('things')
   const [searchText, setSearchText] = useState('')
@@ -209,6 +212,21 @@ export default function App() {
 
           {/* Every language is named in its own language, so someone who has
               landed in the wrong one can still find theirs. */}
+          <label className="toolbar__language">
+            <span className="visually-hidden">{t('appearance.label')}</span>
+            <select
+              value={theme.choice}
+              onChange={(event) => theme.setChoice(event.target.value as ThemeChoice)}
+              title={t('appearance.label')}
+            >
+              {(['system', 'light', 'dark'] as ThemeChoice[]).map((option) => (
+                <option key={option} value={option}>
+                  {t(`appearance.${option}` as TranslationKey)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className="toolbar__language">
             <span className="visually-hidden">{t('toolbar.language')}</span>
             <select

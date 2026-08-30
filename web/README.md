@@ -206,3 +206,19 @@ Code that runs away from the screen — the CSV importer, the storage layer,
 location handling — never builds an English sentence. It reports a translation
 key, and the interface turns that into words in the current language. This is
 why import warnings appear in German when the app is in German.
+
+## Appearance
+
+The picker in the toolbar offers **System**, **Light** and **Dark**, the same
+three choices the iOS app had.
+
+System is the default and follows the device — including switching by itself if
+the device switches at sunset. Choosing Light or Dark overrides that until you
+change it back.
+
+Under the bonnet this sets a `data-theme` attribute on the page, and the
+stylesheet reacts. Dark is declared twice in `src/styles.css`, once under
+`prefers-color-scheme` for System and once under `[data-theme="dark"]` for the
+explicit choice. That looks like duplication and is not: without both, either
+the device setting or the in-app choice would be ignored. There is a long
+comment at the top of the file saying so.
