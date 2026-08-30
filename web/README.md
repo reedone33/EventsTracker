@@ -308,8 +308,13 @@ Searching temporarily opens any category holding a match, and hides the ones
 with none, so a search never appears to find nothing.
 
 **Categories** in the main menu handles the rest: add, rename in place, drag to
-reorder, choose the default, delete. A Thing's category is a dropdown in its
-edit dialog, shown once there is more than one category to choose between.
+reorder, choose the default, delete, and move a batch of things in one go.
+
+A single Thing's category is a dropdown in its edit dialog, shown once there is
+more than one category to choose between. For sorting a lot of things at once,
+the **Move things between categories** section in the Categories screen is far
+quicker — tick what should move, pick the destination, press the button. It is
+also one save rather than one per thing.
 
 Deleting a category states how many things are inside and offers both answers
 explicitly — keep them and move them to the default, or delete them along with

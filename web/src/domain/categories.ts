@@ -162,6 +162,29 @@ export function deleteCategory(
   return { ...data, categories, things }
 }
 
+/**
+ * Put several things into a category at once.
+ *
+ * A separate function rather than calling setThingCategory in a loop: each
+ * call writes the whole store to disk, so moving twenty things one at a time
+ * would be twenty saves instead of one.
+ */
+export function setThingsCategory(
+  data: AppData,
+  thingIds: Set<string>,
+  categoryId: string,
+): AppData {
+  if (!data.categories.some((category) => category.id === categoryId)) return data
+  if (thingIds.size === 0) return data
+
+  return {
+    ...data,
+    things: data.things.map((thing) =>
+      thingIds.has(thing.id) ? { ...thing, categoryId } : thing,
+    ),
+  }
+}
+
 /** Put one thing into a different category. */
 export function setThingCategory(data: AppData, thingId: string, categoryId: string): AppData {
   if (!data.categories.some((category) => category.id === categoryId)) return data

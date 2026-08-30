@@ -31,6 +31,7 @@ import { CSS } from '@dnd-kit/utilities'
 import type { Category, Thing } from '../domain/types'
 import type { DeleteCategoryMode } from '../domain/categories'
 import { thingsInCategory } from '../domain/categories'
+import { colorToCss } from '../domain/color'
 import { useI18n } from '../i18n'
 
 interface CategoryManagerProps {
@@ -42,6 +43,7 @@ interface CategoryManagerProps {
   onSetDefault: (categoryId: string) => void
   onMove: (movedId: string, targetId: string) => void
   onDelete: (categoryId: string, mode: DeleteCategoryMode) => void
+  onMoveThings: (thingIds: Set<string>, categoryId: string) => void
   onClose: () => void
 }
 
@@ -123,13 +125,27 @@ function CategoryRow({
 }
 
 export function CategoryManager(props: CategoryManagerProps) {
-  const { categories, things, defaultCategoryId, onAdd, onRename, onSetDefault, onMove, onDelete, onClose } =
-    props
+  const {
+    categories,
+    things,
+    defaultCategoryId,
+    onAdd,
+    onRename,
+    onSetDefault,
+    onMove,
+    onDelete,
+    onMoveThings,
+    onClose,
+  } = props
 
   const { t, tc } = useI18n()
   const [newName, setNewName] = useState('')
   const [makeDefault, setMakeDefault] = useState(false)
   const [deleting, setDeleting] = useState<Category | null>(null)
+
+  // Which things are ticked for a bulk move, and where they are headed.
+  const [selectedThingIds, setSelectedThingIds] = useState<Set<string>>(new Set())
+  const [moveTarget, setMoveTarget] = useState(defaultCategoryId)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -187,6 +203,76 @@ export function CategoryManager(props: CategoryManagerProps) {
             </ul>
           </SortableContext>
         </DndContext>
+
+        {/* Moving things one at a time through each Thing's own dialog is fine
+            for the occasional change, and painful for an initial sort. This
+            does the whole lot in one go — and in one save, rather than one
+            save per thing. */}
+        {categories.length > 1 && things.length > 0 && (
+          <section className="panel-section">
+            <h3 className="panel-section__title">{t('category.moveThings')}</h3>
+            <p className="panel-section__text">{t('category.moveExplain')}</p>
+
+            <div className="controls__row controls__row--wrap">
+              <label className="controls__field">
+                <span className="controls__label">{t('category.moveTo')}</span>
+                <select value={moveTarget} onChange={(event) => setMoveTarget(event.target.value)}>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                type="button"
+                className="button button--primary"
+                disabled={selectedThingIds.size === 0}
+                onClick={() => {
+                  onMoveThings(selectedThingIds, moveTarget)
+                  setSelectedThingIds(new Set())
+                }}
+              >
+                {selectedThingIds.size === 0
+                  ? t('category.moveNone')
+                  : tc('category.moveButton', selectedThingIds.size)}
+              </button>
+            </div>
+
+            <ul className="move-list">
+              {things.map((thing) => {
+                const home = categories.find((category) => category.id === thing.categoryId)
+                const isTicked = selectedThingIds.has(thing.id)
+                return (
+                  <li key={thing.id}>
+                    <label className="move-list__item">
+                      <input
+                        type="checkbox"
+                        checked={isTicked}
+                        onChange={() =>
+                          setSelectedThingIds((current) => {
+                            const next = new Set(current)
+                            if (next.has(thing.id)) next.delete(thing.id)
+                            else next.add(thing.id)
+                            return next
+                          })
+                        }
+                      />
+                      <span
+                        className="move-list__swatch"
+                        style={{ backgroundColor: colorToCss(thing.color) }}
+                      />
+                      <span className="move-list__name">{thing.name}</span>
+                      {/* Where it is now, so you can see what still needs moving. */}
+                      <span className="move-list__home">{home?.name}</span>
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
 
         <section className="panel-section">
           <h3 className="panel-section__title">{t('category.add')}</h3>

@@ -155,7 +155,13 @@ export const en = {
   'timescale.byMinute': 'By Minute',
 
   // --- Thing detail ---
-  'detail.rename': 'Rename',
+  'detail.edit': 'Edit',
+  'category.moveThings': 'Move things between categories',
+  'category.moveExplain': 'Tick anything you want to move, choose where it should go, then press the button.',
+  'category.moveTo': 'Move to',
+  'category.moveNone': 'Nothing ticked',
+  'category.moveButton_one': 'Move {count} thing',
+  'category.moveButton_other': 'Move {count} things',
   'detail.exportCsv': 'Export',
   'detail.addEntry': 'Add entry',
   'detail.history': 'History',

@@ -19,6 +19,7 @@ import {
   renameCategory as renameCategoryIn,
   setDefaultCategory as setDefaultCategoryIn,
   setThingCategory as setThingCategoryIn,
+  setThingsCategory as setThingsCategoryIn,
 } from '../domain/categories'
 import type { DeleteCategoryMode } from '../domain/categories'
 import { loadThings, saveAppData } from '../storage/storage'
@@ -68,6 +69,8 @@ export interface Store {
   moveCategory: (movedId: string, targetId: string) => void
   deleteCategory: (categoryId: string, mode: DeleteCategoryMode) => void
   setThingCategory: (thingId: string, categoryId: string) => void
+  /** Move several things at once — one save rather than one per thing. */
+  setThingsCategory: (thingIds: Set<string>, categoryId: string) => void
   /** Accept that stored data is unreadable and continue with an empty list. */
   startFreshAfterError: () => void
   dismissWarnings: () => void
@@ -306,6 +309,12 @@ export function useStore(): Store {
     [commit],
   )
 
+  const setThingsCategory = useCallback(
+    (thingIds: Set<string>, categoryId: string) =>
+      commit((current) => setThingsCategoryIn(current, thingIds, categoryId)),
+    [commit],
+  )
+
   const dismissWarnings = useCallback(() => setWarnings([]), [])
 
   return {
@@ -333,6 +342,7 @@ export function useStore(): Store {
     moveCategory,
     deleteCategory,
     setThingCategory,
+    setThingsCategory,
     startFreshAfterError,
     dismissWarnings,
   }

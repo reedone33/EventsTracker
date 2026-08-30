@@ -18,6 +18,7 @@ import {
   renameCategory,
   setDefaultCategory,
   setThingCategory,
+  setThingsCategory,
   thingsInCategory,
 } from './categories'
 
@@ -191,5 +192,34 @@ describe('setThingCategory', () => {
   it('ignores a category that does not exist, rather than orphaning the thing', () => {
     const data = setThingCategory(sample(), 'a', 'nope')
     expect(data.things.find((t) => t.id === 'a')?.categoryId).toBe('general')
+  })
+})
+
+describe('setThingsCategory — moving several at once', () => {
+  it('moves everything ticked', () => {
+    const data = setThingsCategory(sample(), new Set(['b', 'c']), 'general')
+    expect(thingsInCategory(data.things, 'general')).toHaveLength(3)
+    expect(thingsInCategory(data.things, 'garden')).toHaveLength(0)
+  })
+
+  it('leaves the ones not ticked where they are', () => {
+    const data = setThingsCategory(sample(), new Set(['b']), 'general')
+    expect(data.things.find((t) => t.id === 'c')?.categoryId).toBe('garden')
+  })
+
+  it('never loses a thing or its logs', () => {
+    const data = setThingsCategory(sample(), new Set(['a', 'b', 'c']), 'garden')
+    expect(data.things).toHaveLength(3)
+    expect(data.things.every((t) => t.logs.length === 1)).toBe(true)
+  })
+
+  it('ignores a destination that does not exist', () => {
+    const data = setThingsCategory(sample(), new Set(['a']), 'nope')
+    expect(data.things.find((t) => t.id === 'a')?.categoryId).toBe('general')
+  })
+
+  it('does nothing when nothing is ticked', () => {
+    const before = sample()
+    expect(setThingsCategory(before, new Set(), 'garden')).toBe(before)
   })
 })

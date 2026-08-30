@@ -114,7 +114,7 @@ export function ThingDetailScreen(props: ThingDetailScreenProps) {
 
           <div className="detail__actions">
             <button type="button" className="button" onClick={onEditThing}>
-              {t('detail.rename')}
+              {t('detail.edit')}
             </button>
             <button
               type="button"

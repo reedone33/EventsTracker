@@ -1036,3 +1036,39 @@ textarea.field__input { resize: vertical; font-family: inherit; }
 /* Room at the bottom of the page so the last row of tiles is not left sitting
    underneath the bar. */
 .app--editing { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); }
+
+/* --- Bulk move list -------------------------------------------------------- */
+
+.move-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  /* Long lists scroll inside the section rather than stretching the dialog. */
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.move-list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.move-list li:last-child .move-list__item { border-bottom: none; }
+.move-list__item:hover { background: var(--bg); }
+
+.move-list__swatch { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+.move-list__name { flex: 1 1 auto; overflow-wrap: anywhere; }
+
+/* Where it currently lives, so you can see what still needs moving. */
+.move-list__home {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

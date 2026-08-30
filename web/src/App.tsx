@@ -520,6 +520,7 @@ export default function App() {
           onSetDefault={store.setDefaultCategory}
           onMove={store.moveCategory}
           onDelete={store.deleteCategory}
+          onMoveThings={store.setThingsCategory}
           onClose={() => setDialog({ kind: 'none' })}
         />
       )}
