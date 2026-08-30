@@ -14,15 +14,16 @@ import type { ColorData, SortOption, Thing } from './domain/types'
 import { useI18n, LANGUAGES } from './i18n'
 import type { LanguageCode, TranslationKey } from './i18n'
 import { visibleThings } from './domain/things'
+import { orderedCategories, thingsInCategory } from './domain/categories'
 import { useStore } from './state/useStore'
-import { ThingTile } from './components/ThingTile'
 import { ThingDialog } from './components/ThingDialog'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { DataPanel } from './components/DataPanel'
 import { AnalyticsScreen } from './components/AnalyticsScreen'
 import { ThingDetailScreen } from './components/ThingDetailScreen'
 import { MapScreen } from './components/MapScreen'
-import { SortableThingTile } from './components/SortableThingTile'
+import { CategorySection } from './components/CategorySection'
+import { CategoryManager } from './components/CategoryManager'
 import { IconMenu } from './components/IconMenu'
 import type { MenuSection } from './components/IconMenu'
 import {
@@ -32,17 +33,6 @@ import {
   SearchIcon,
   SortIcon,
 } from './components/Icons'
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import type { DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useLocation } from './state/useLocation'
 import { useTheme } from './state/useTheme'
 import type { ThemeChoice } from './state/useTheme'
@@ -56,6 +46,7 @@ type ActiveDialog =
   | { kind: 'deleteThing'; thing: Thing }
   | { kind: 'data' }
   | { kind: 'detail'; thingId: string }
+  | { kind: 'categories' }
 
 /** Which of the two top-level screens is showing. */
 type Tab = 'things' | 'analytics' | 'map'
@@ -72,6 +63,19 @@ const SORT_OPTIONS: SortOption[] = ['dateCreated', 'ascending', 'descending', 'm
 
 /** Where the chosen sort order is remembered between visits. */
 const SORT_KEY = 'eventstracker.sort'
+
+/** Which categories were left open. */
+const EXPANDED_KEY = 'eventstracker.expandedCategories'
+
+function readExpandedCategories(): Set<string> {
+  try {
+    const stored = window.localStorage.getItem(EXPANDED_KEY)
+    if (stored) return new Set(JSON.parse(stored) as string[])
+  } catch {
+    // Blocked or damaged storage just means everything starts folded.
+  }
+  return new Set()
+}
 
 /**
  * The sort order to open with: whatever was chosen last time, or newest-first
@@ -100,6 +104,22 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('things')
   const [searchText, setSearchText] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(readExpandedCategories)
+
+  /** Fold or unfold a category, and remember it. */
+  function toggleCategory(categoryId: string) {
+    setExpandedCategories((current) => {
+      const next = new Set(current)
+      if (next.has(categoryId)) next.delete(categoryId)
+      else next.add(categoryId)
+      try {
+        window.localStorage.setItem(EXPANDED_KEY, JSON.stringify([...next]))
+      } catch {
+        // Not remembering which were open is harmless.
+      }
+      return next
+    })
+  }
   const [sortOption, setSortOptionState] = useState<SortOption>(readStoredSort)
 
   /** Change the sort order and remember it for next time. */
@@ -127,28 +147,6 @@ export default function App() {
    */
   const canReorder = sortOption === 'manual' && searchText.trim() === '' && isEditing
 
-  /**
-   * What starts a drag.
-   *
-   * The distance and delay thresholds matter: without them, an ordinary tap
-   * registers as a tiny drag and the tile jitters. On touch a short press is
-   * required so that scrolling the page still works normally.
-   */
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
-    // Lets the list be rearranged from the keyboard: tab to a tile, press
-    // space, use the arrow keys, press space again.
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    // `over` is empty when a tile is dropped outside the grid; nothing moves.
-    if (!over || active.id === over.id) return
-    store.reorderThings(String(active.id), String(over.id))
-  }
-
   const shownThings = useMemo(
     () => visibleThings(store.things, searchText, sortOption),
     [store.things, searchText, sortOption],
@@ -165,9 +163,10 @@ export default function App() {
     }, 5000)
   }
 
-  function handleSaveThing(name: string, color: ColorData) {
+  function handleSaveThing(name: string, color: ColorData, categoryId: string) {
     if (dialog.kind === 'editThing') {
       store.updateThing(dialog.thing.id, { name, color })
+      store.setThingCategory(dialog.thing.id, categoryId)
     } else {
       store.addThing(name, color)
     }
@@ -302,6 +301,11 @@ export default function App() {
                   title: t('menu.actions'),
                   items: [
                     {
+                      key: 'categories',
+                      label: t('category.manage'),
+                      onSelect: () => setDialog({ kind: 'categories' }),
+                    },
+                    {
                       key: 'data',
                       label: t('toolbar.data'),
                       onSelect: () => setDialog({ kind: 'data' }),
@@ -392,57 +396,40 @@ export default function App() {
       )}
 
       {tab === 'things' && (
-      <main className="grid">
-        {canReorder ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={shownThings.map((thing) => thing.id)}
-              // The strategy for a wrapping grid, rather than a single column.
-              strategy={rectSortingStrategy}
-            >
-              {shownThings.map((thing) => (
-                <SortableThingTile
-                  key={thing.id}
-                  thing={thing}
-                  onLog={() => handleLog(thing)}
-                  onOpen={() => setDialog({ kind: 'detail', thingId: thing.id })}
-                  onEdit={() => setDialog({ kind: 'editThing', thing })}
-                  onDelete={() => setDialog({ kind: 'deleteThing', thing })}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          shownThings.map((thing) => (
-            <ThingTile
-              key={thing.id}
-              thing={thing}
-              isEditing={isEditing}
-              onLog={() => handleLog(thing)}
-              onOpen={() => setDialog({ kind: 'detail', thingId: thing.id })}
-              onEdit={() => setDialog({ kind: 'editThing', thing })}
-              onDelete={() => setDialog({ kind: 'deleteThing', thing })}
-            />
-          ))
-        )}
+        <main>
+          {orderedCategories(store.appData).map((category) => {
+            const isDefault = category.id === store.defaultCategoryId
+            // Searching temporarily opens any category holding a match —
+            // otherwise a search would appear to find nothing.
+            const isSearching = searchText.trim() !== ''
+            const inCategory = thingsInCategory(shownThings, category.id)
 
-        {/* The add button sits at the end of the grid, as it does on iOS.
-            It is hidden while searching, where it would be confusing. */}
-        {searchText.trim() === '' && (
-          <button
-            type="button"
-            className="tile tile--add"
-            onClick={() => setDialog({ kind: 'addThing' })}
-            aria-label={t('tile.addAria')}
-          >
-            +
-          </button>
-        )}
-      </main>
+            // A folded category with no matches is hidden entirely while
+            // searching, rather than leaving a row of empty headings.
+            if (isSearching && inCategory.length === 0 && !isDefault) return null
+
+            return (
+              <CategorySection
+                key={category.id}
+                category={category}
+                isDefault={isDefault}
+                things={inCategory}
+                isExpanded={isSearching || expandedCategories.has(category.id)}
+                onToggleExpanded={() => toggleCategory(category.id)}
+                isEditing={isEditing}
+                canReorder={canReorder}
+                onReorder={store.reorderThings}
+                onLog={handleLog}
+                onOpen={(thing) => setDialog({ kind: 'detail', thingId: thing.id })}
+                onEditThing={(thing) => setDialog({ kind: 'editThing', thing })}
+                onDeleteThing={(thing) => setDialog({ kind: 'deleteThing', thing })}
+                onAddThing={
+                  isDefault && !isSearching ? () => setDialog({ kind: 'addThing' }) : undefined
+                }
+              />
+            )
+          })}
+        </main>
       )}
 
       {tab === 'analytics' && <AnalyticsScreen things={store.things} />}
@@ -472,6 +459,8 @@ export default function App() {
       {(dialog.kind === 'addThing' || dialog.kind === 'editThing') && (
         <ThingDialog
           thing={dialog.kind === 'editThing' ? dialog.thing : null}
+          categories={store.categories}
+          defaultCategoryId={store.defaultCategoryId}
           onSave={handleSaveThing}
           onCancel={() => setDialog({ kind: 'none' })}
         />
@@ -510,11 +499,26 @@ export default function App() {
           )
         })()}
 
+      {dialog.kind === 'categories' && (
+        <CategoryManager
+          categories={store.categories}
+          things={store.things}
+          defaultCategoryId={store.defaultCategoryId}
+          onAdd={store.addCategory}
+          onRename={store.renameCategory}
+          onSetDefault={store.setDefaultCategory}
+          onMove={store.moveCategory}
+          onDelete={store.deleteCategory}
+          onClose={() => setDialog({ kind: 'none' })}
+        />
+      )}
+
       {dialog.kind === 'data' && (
         <DataPanel
           things={store.things}
-          onImport={(things: Thing[], warnings: ImportWarning[]) => {
-            store.replaceAll(things, warnings)
+          appData={store.appData}
+          onImport={(things: Thing[], warnings: ImportWarning[], data) => {
+            store.replaceAll(things, warnings, data)
             setDialog({ kind: 'none' })
           }}
           onClose={() => setDialog({ kind: 'none' })}

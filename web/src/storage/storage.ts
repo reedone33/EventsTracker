@@ -14,19 +14,23 @@
  * error, and the app refuses to save over it until the user decides.
  */
 
-import type { Thing } from '../domain/types'
-import { normalizeThings } from './normalize'
+import type { AppData } from '../domain/types'
+import { normalizeAppData } from './normalize'
 import type { ImportWarning } from './normalize'
 
 /** The key the data is filed under inside the browser's storage. */
 const STORAGE_KEY = 'eventstracker.things.v1'
 
-/** Written into exported files so a future version can recognise old backups. */
-const SCHEMA_VERSION = 1
+/**
+ * Written into exported files so a future version can recognise old backups.
+ * Version 2 added categories. Version 1 files still load — the loader fills in
+ * the missing pieces rather than refusing them.
+ */
+const SCHEMA_VERSION = 2
 
 /** The three things that can happen when we try to read saved data. */
 export type LoadResult =
-  | { status: 'ok'; things: Thing[]; warnings: ImportWarning[] }
+  | { status: 'ok'; data: AppData; warnings: ImportWarning[] }
   | { status: 'empty' }
   | { status: 'error'; message: string; rawText: string | null }
 
@@ -52,8 +56,8 @@ export function loadThings(): LoadResult {
 
   try {
     const parsed = JSON.parse(rawText)
-    const { things, warnings } = normalizeThings(parsed)
-    return { status: 'ok', things, warnings }
+    const { data, warnings } = normalizeAppData(parsed)
+    return { status: 'ok', data, warnings }
   } catch (error) {
     return {
       status: 'error',
@@ -65,9 +69,12 @@ export function loadThings(): LoadResult {
 }
 
 /** Write the data back to the browser. Returns an error message, or null on success. */
-export function saveThings(things: Thing[]): string | null {
+export function saveAppData(data: AppData): string | null {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(things))
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ schemaVersion: SCHEMA_VERSION, ...data }),
+    )
     return null
   } catch (error) {
     // The usual cause is the ~5MB storage limit, which needs a real fix, not a retry.
@@ -75,13 +82,18 @@ export function saveThings(things: Thing[]): string | null {
   }
 }
 
-/** Build the text of a backup file, including a version tag and a timestamp. */
-export function buildExportJson(things: Thing[]): string {
+/**
+ * Build the text of a backup file: everything needed to restore the app exactly
+ * as it is, categories included.
+ */
+export function buildExportJson(data: AppData): string {
   return JSON.stringify(
     {
       schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
-      things,
+      categories: data.categories,
+      defaultCategoryId: data.defaultCategoryId,
+      things: data.things,
     },
     null,
     2,

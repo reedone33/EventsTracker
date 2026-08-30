@@ -5,33 +5,45 @@
  */
 
 import { useEffect, useState } from 'react'
-import type { ColorData, Thing } from '../domain/types'
+import type { Category, ColorData, Thing } from '../domain/types'
 import { colorToHex, hexToColor } from '../domain/color'
 import { useI18n } from '../i18n'
 
 interface ThingDialogProps {
   /** The thing being edited, or null when creating a new one. */
   thing: Thing | null
-  onSave: (name: string, color: ColorData) => void
+  categories: Category[]
+  /** Where a new thing goes: the default category. */
+  defaultCategoryId: string
+  onSave: (name: string, color: ColorData, categoryId: string) => void
   onCancel: () => void
 }
 
-export function ThingDialog({ thing, onSave, onCancel }: ThingDialogProps) {
+export function ThingDialog({
+  thing,
+  categories,
+  defaultCategoryId,
+  onSave,
+  onCancel,
+}: ThingDialogProps) {
   const { t } = useI18n()
   const [name, setName] = useState('')
   // Red is the iOS app's default colour for a new thing.
   const [hex, setHex] = useState('#ff0000')
+  const [categoryId, setCategoryId] = useState(defaultCategoryId)
 
   // Fill the form when an existing thing is opened for editing.
   useEffect(() => {
     if (thing) {
       setName(thing.name)
       setHex(colorToHex(thing.color))
+      setCategoryId(thing.categoryId ?? defaultCategoryId)
     } else {
       setName('')
       setHex('#ff0000')
+      setCategoryId(defaultCategoryId)
     }
-  }, [thing])
+  }, [thing, defaultCategoryId])
 
   const trimmedName = name.trim()
   const canSave = trimmedName.length > 0
@@ -39,7 +51,7 @@ export function ThingDialog({ thing, onSave, onCancel }: ThingDialogProps) {
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault() // Stop the browser reloading the page on submit.
     if (!canSave) return
-    onSave(trimmedName, hexToColor(hex))
+    onSave(trimmedName, hexToColor(hex), categoryId)
   }
 
   return (
@@ -77,6 +89,25 @@ export function ThingDialog({ thing, onSave, onCancel }: ThingDialogProps) {
               onChange={(event) => setHex(event.target.value)}
             />
           </label>
+
+          {/* Only worth showing once there is more than one category to choose
+              between — a dropdown with a single option is just noise. */}
+          {categories.length > 1 && (
+            <label className="field">
+              <span className="field__label">{t('category.label')}</span>
+              <select
+                className="field__input"
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+              >
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <div className="dialog__buttons">
             <button type="button" className="button" onClick={onCancel}>

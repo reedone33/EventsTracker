@@ -292,3 +292,35 @@ same list becomes switches, with **All**, **Busiest 5** and **None** at the top.
 The chart opens showing everything. Past about eight lines a chart gets hard to
 read and there are only eight reliably distinct colours, so **Busiest 5** is
 there as a one-tap way back to something legible.
+
+## Categories
+
+Things are grouped into categories. One is the **default**: it sits at the top of
+the home screen, is always open, and is where new things go.
+
+**The default category cannot be deleted.** That is the rule the rest depends on
+— because it always exists, deleting any other category always has somewhere
+safe to move its things to. Make a different category the default and the old
+one becomes deletable.
+
+Other categories fold away. Which ones you left open is remembered per device.
+Searching temporarily opens any category holding a match, and hides the ones
+with none, so a search never appears to find nothing.
+
+**Categories** in the main menu handles the rest: add, rename in place, drag to
+reorder, choose the default, delete. A Thing's category is a dropdown in its
+edit dialog, shown once there is more than one category to choose between.
+
+Deleting a category states how many things are inside and offers both answers
+explicitly — keep them and move them to the default, or delete them along with
+their history. Neither is preselected as a plain "OK".
+
+### Migration
+
+Data saved before categories existed gets one category named **General**, with
+everything in it, made the default. This happens on load, so old backups and CSV
+imports keep working. The same code repairs anything that has drifted — a thing
+pointing at a deleted category, for instance — so that can never become a crash.
+
+`General` is stored as ordinary text rather than a translated string, because it
+becomes a name you own and can rename.

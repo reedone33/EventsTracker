@@ -7,7 +7,8 @@
  * a Thing is skipped and reported, never silently half-imported).
  */
 
-import type { ColorData, LocationData, LogEntry, Thing } from '../domain/types'
+import type { AppData, Category, ColorData, LocationData, LogEntry, Thing } from '../domain/types'
+import { ensureCategories } from '../domain/categories'
 import { parseAppDate } from '../domain/dates'
 import { newId } from '../domain/things'
 
@@ -124,6 +125,9 @@ export function normalizeThings(raw: unknown): NormalizeResult {
       color: normalizeColor(entry.color),
       logs,
       creationDate: creationDate ? creationDate.toISOString() : null,
+      // Missing on anything saved before categories existed. ensureCategories
+      // gives those a home rather than letting them disappear.
+      categoryId: typeof entry.categoryId === 'string' ? entry.categoryId : null,
     })
   }
 
@@ -151,4 +155,32 @@ export function normalizeThings(raw: unknown): NormalizeResult {
   }
 
   return { things, warnings }
+}
+
+/** Read the categories out of a saved file, ignoring anything malformed. */
+function normalizeCategories(raw: unknown): Category[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter(
+      (entry): entry is Record<string, unknown> =>
+        isRecord(entry) && typeof entry.id === 'string' && typeof entry.name === 'string',
+    )
+    .map((entry) => ({ id: entry.id as string, name: entry.name as string }))
+}
+
+/**
+ * Read a whole saved file — things, categories and which category is default.
+ *
+ * Accepts every shape the app has ever written: the original bare array of
+ * things, the first export format, and the current one. Anything missing is
+ * filled in by ensureCategories, so an old backup opens without complaint.
+ */
+export function normalizeAppData(raw: unknown): { data: AppData; warnings: ImportWarning[] } {
+  const { things, warnings } = normalizeThings(raw)
+
+  const categories = isRecord(raw) ? normalizeCategories(raw.categories) : []
+  const defaultCategoryId =
+    isRecord(raw) && typeof raw.defaultCategoryId === 'string' ? raw.defaultCategoryId : null
+
+  return { data: ensureCategories({ things, categories, defaultCategoryId }), warnings }
 }

@@ -9,9 +9,19 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { LocationData, Thing } from '../domain/types'
+import type { AppData, Category, LocationData, Thing } from '../domain/types'
 import { createLogEntry, createThing, moveThingById, newId } from '../domain/things'
-import { loadThings, saveThings } from '../storage/storage'
+import {
+  addCategory as addCategoryTo,
+  deleteCategory as deleteCategoryFrom,
+  ensureCategories,
+  moveCategory as moveCategoryIn,
+  renameCategory as renameCategoryIn,
+  setDefaultCategory as setDefaultCategoryIn,
+  setThingCategory as setThingCategoryIn,
+} from '../domain/categories'
+import type { DeleteCategoryMode } from '../domain/categories'
+import { loadThings, saveAppData } from '../storage/storage'
 import type { ImportWarning } from '../storage/normalize'
 
 /**
@@ -23,6 +33,8 @@ export type StoreStatus = 'loading' | 'ready' | 'blocked'
 
 export interface Store {
   things: Thing[]
+  categories: Category[]
+  defaultCategoryId: string
   status: StoreStatus
   /** Explanation shown when status is 'blocked'. */
   loadError: string | null
@@ -45,14 +57,27 @@ export interface Store {
   /** Change an existing log's time or note. */
   updateLog: (thingId: string, logId: string, changes: { date?: Date; note?: string | null }) => void
   deleteLog: (thingId: string, logId: string) => void
-  replaceAll: (things: Thing[], warnings?: ImportWarning[]) => void
+  replaceAll: (things: Thing[], warnings?: ImportWarning[], data?: Partial<AppData>) => void
+
+  /** Everything the app stores, for exporting. */
+  appData: AppData
+
+  addCategory: (name: string, makeDefault?: boolean) => void
+  renameCategory: (categoryId: string, name: string) => void
+  setDefaultCategory: (categoryId: string) => void
+  moveCategory: (movedId: string, targetId: string) => void
+  deleteCategory: (categoryId: string, mode: DeleteCategoryMode) => void
+  setThingCategory: (thingId: string, categoryId: string) => void
   /** Accept that stored data is unreadable and continue with an empty list. */
   startFreshAfterError: () => void
   dismissWarnings: () => void
 }
 
+/** An empty app, used until the stored data has been read. */
+const EMPTY: AppData = { categories: [], things: [], defaultCategoryId: '' }
+
 export function useStore(): Store {
-  const [things, setThings] = useState<Thing[]>([])
+  const [data, setData] = useState<AppData>(EMPTY)
   const [status, setStatus] = useState<StoreStatus>('loading')
   const [loadError, setLoadError] = useState<string | null>(null)
   const [rawTextOnError, setRawTextOnError] = useState<string | null>(null)
@@ -68,12 +93,13 @@ export function useStore(): Store {
     const result = loadThings()
 
     if (result.status === 'ok') {
-      setThings(result.things)
+      setData(result.data)
       setWarnings(result.warnings)
       setStatus('ready')
       canSave.current = true
     } else if (result.status === 'empty') {
-      setThings([])
+      // A fresh install still needs its first category to exist.
+      setData(ensureCategories({ things: [] }))
       setStatus('ready')
       canSave.current = true
     } else {
@@ -91,28 +117,44 @@ export function useStore(): Store {
    * Taking a function (rather than a finished list) guarantees we always build
    * on the newest state, even if several taps land in quick succession.
    */
-  const commit = useCallback((update: (current: Thing[]) => Thing[]) => {
-    setThings((current) => {
+  const commit = useCallback((update: (current: AppData) => AppData) => {
+    setData((current) => {
       const next = update(current)
       if (canSave.current) {
-        const error = saveThings(next)
+        const error = saveAppData(next)
         setSaveError(error)
       }
       return next
     })
   }, [])
 
+  /** Shorthand for the many operations that only change the list of things. */
+  const commitThings = useCallback(
+    (update: (things: Thing[]) => Thing[]) => {
+      commit((current) => ({ ...current, things: update(current.things) }))
+    },
+    [commit],
+  )
+
   const addThing = useCallback(
     (name: string, color: Thing['color']) => {
-      commit((current) => [...current, createThing(name, color)])
+      // A new thing joins the default category, which is what makes the default
+      // "the one new things go into".
+      commit((current) => ({
+        ...current,
+        things: [
+          ...current.things,
+          { ...createThing(name, color), categoryId: current.defaultCategoryId },
+        ],
+      }))
     },
     [commit],
   )
 
   const updateThing = useCallback(
     (thingId: string, changes: Partial<Pick<Thing, 'name' | 'color'>>) => {
-      commit((current) =>
-        current.map((thing) => (thing.id === thingId ? { ...thing, ...changes } : thing)),
+      commitThings((things) =>
+        things.map((thing) => (thing.id === thingId ? { ...thing, ...changes } : thing)),
       )
     },
     [commit],
@@ -120,14 +162,14 @@ export function useStore(): Store {
 
   const deleteThing = useCallback(
     (thingId: string) => {
-      commit((current) => current.filter((thing) => thing.id !== thingId))
+      commitThings((things) => things.filter((thing) => thing.id !== thingId))
     },
     [commit],
   )
 
   const reorderThings = useCallback(
     (movedThingId: string, targetThingId: string) => {
-      commit((current) => moveThingById(current, movedThingId, targetThingId))
+      commitThings((things) => moveThingById(things, movedThingId, targetThingId))
     },
     [commit],
   )
@@ -135,8 +177,8 @@ export function useStore(): Store {
   const logEvent = useCallback(
     (thingId: string, location?: LocationData | null) => {
       const entry = createLogEntry(location)
-      commit((current) =>
-        current.map((thing) =>
+      commitThings((things) =>
+        things.map((thing) =>
           thing.id === thingId ? { ...thing, logs: [...thing.logs, entry] } : thing,
         ),
       )
@@ -153,8 +195,8 @@ export function useStore(): Store {
         location: null,
         note: note && note.trim() !== '' ? note : null,
       }
-      commit((current) =>
-        current.map((thing) =>
+      commitThings((things) =>
+        things.map((thing) =>
           thing.id === thingId ? { ...thing, logs: [...thing.logs, entry] } : thing,
         ),
       )
@@ -164,8 +206,8 @@ export function useStore(): Store {
 
   const updateLog = useCallback(
     (thingId: string, logId: string, changes: { date?: Date; note?: string | null }) => {
-      commit((current) =>
-        current.map((thing) => {
+      commitThings((things) =>
+        things.map((thing) => {
           if (thing.id !== thingId) return thing
           return {
             ...thing,
@@ -193,8 +235,8 @@ export function useStore(): Store {
 
   const deleteLog = useCallback(
     (thingId: string, logId: string) => {
-      commit((current) =>
-        current.map((thing) =>
+      commitThings((things) =>
+        things.map((thing) =>
           thing.id === thingId
             ? { ...thing, logs: thing.logs.filter((log) => log.id !== logId) }
             : thing,
@@ -205,7 +247,7 @@ export function useStore(): Store {
   )
 
   const replaceAll = useCallback(
-    (nextThings: Thing[], nextWarnings: ImportWarning[] = []) => {
+    (nextThings: Thing[], nextWarnings: ImportWarning[] = [], nextData?: Partial<AppData>) => {
       // An import is allowed to unblock a previously unreadable store, because
       // the user has consciously chosen to replace the contents.
       canSave.current = true
@@ -213,7 +255,13 @@ export function useStore(): Store {
       setLoadError(null)
       setRawTextOnError(null)
       setWarnings(nextWarnings)
-      commit(() => nextThings)
+      commit((current) =>
+        ensureCategories({
+          things: nextThings,
+          categories: nextData?.categories ?? current.categories,
+          defaultCategoryId: nextData?.defaultCategoryId ?? current.defaultCategoryId,
+        }),
+      )
     },
     [commit],
   )
@@ -223,13 +271,48 @@ export function useStore(): Store {
     setStatus('ready')
     setLoadError(null)
     setRawTextOnError(null)
-    commit(() => [])
+    commit(() => ensureCategories({ things: [] }))
   }, [commit])
+
+  const addCategory = useCallback(
+    (name: string, makeDefault = false) => commit((current) => addCategoryTo(current, name, makeDefault)),
+    [commit],
+  )
+
+  const renameCategory = useCallback(
+    (categoryId: string, name: string) => commit((current) => renameCategoryIn(current, categoryId, name)),
+    [commit],
+  )
+
+  const setDefaultCategory = useCallback(
+    (categoryId: string) => commit((current) => setDefaultCategoryIn(current, categoryId)),
+    [commit],
+  )
+
+  const moveCategory = useCallback(
+    (movedId: string, targetId: string) => commit((current) => moveCategoryIn(current, movedId, targetId)),
+    [commit],
+  )
+
+  const deleteCategory = useCallback(
+    (categoryId: string, mode: DeleteCategoryMode) =>
+      commit((current) => deleteCategoryFrom(current, categoryId, mode)),
+    [commit],
+  )
+
+  const setThingCategory = useCallback(
+    (thingId: string, categoryId: string) =>
+      commit((current) => setThingCategoryIn(current, thingId, categoryId)),
+    [commit],
+  )
 
   const dismissWarnings = useCallback(() => setWarnings([]), [])
 
   return {
-    things,
+    things: data.things,
+    categories: data.categories,
+    defaultCategoryId: data.defaultCategoryId,
+    appData: data,
     status,
     loadError,
     rawTextOnError,
@@ -244,6 +327,12 @@ export function useStore(): Store {
     updateLog,
     deleteLog,
     replaceAll,
+    addCategory,
+    renameCategory,
+    setDefaultCategory,
+    moveCategory,
+    deleteCategory,
+    setThingCategory,
     startFreshAfterError,
     dismissWarnings,
   }

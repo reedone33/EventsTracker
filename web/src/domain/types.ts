@@ -36,6 +36,19 @@ export interface LogEntry {
 }
 
 /**
+ * A group of things, e.g. "Garden" or "Health".
+ *
+ * One category is the DEFAULT: new things join it, it always sits at the top of
+ * the home screen, it is always expanded, and it cannot be deleted. That last
+ * rule is what makes deleting any other category safe — there is always
+ * somewhere to move its things to.
+ */
+export interface Category {
+  id: string
+  name: string
+}
+
+/**
  * A tracked thing, e.g. "Coffee" or "Workout".
  *
  * Note that logs are stored INSIDE the thing rather than in a separate list.
@@ -48,6 +61,21 @@ export interface Thing {
   logs: LogEntry[]
   /** ISO date string, or missing on things created by very early app versions. */
   creationDate?: string | null
+  /**
+   * Which category this belongs to.
+   *
+   * Optional because data saved before categories existed has no such field.
+   * Anything missing or pointing at a category that has since been deleted is
+   * moved to the default category on load — see domain/categories.ts.
+   */
+  categoryId?: string | null
+}
+
+/** Everything the app stores: the things, their groups, and which group is default. */
+export interface AppData {
+  categories: Category[]
+  things: Thing[]
+  defaultCategoryId: string
 }
 
 /** How the main grid is ordered. Mirrors SortOption in the iOS ContentView. */

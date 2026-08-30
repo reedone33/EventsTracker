@@ -6,8 +6,8 @@
  */
 
 import { useRef, useState } from 'react'
-import type { Thing } from '../domain/types'
-import { normalizeThings } from '../storage/normalize'
+import type { AppData, Thing } from '../domain/types'
+import { normalizeAppData } from '../storage/normalize'
 import { csvToThings } from '../storage/csv'
 import { CsvExportSection } from './CsvExportSection'
 import { buildExportJson, downloadTextFile } from '../storage/storage'
@@ -17,7 +17,9 @@ import { useI18n } from '../i18n'
 
 interface DataPanelProps {
   things: Thing[]
-  onImport: (things: Thing[], warnings: ImportWarning[]) => void
+  /** Everything stored, so a backup can carry the categories too. */
+  appData: AppData
+  onImport: (things: Thing[], warnings: ImportWarning[], data?: Partial<AppData>) => void
   onClose: () => void
 }
 
@@ -27,9 +29,14 @@ interface PendingImport {
   source: 'csv' | 'json'
   things: Thing[]
   warnings: ImportWarning[]
+  /**
+   * A JSON backup brings its own categories. A CSV has none, so importing one
+   * keeps the categories already set up and drops its things into the default.
+   */
+  data?: Partial<AppData>
 }
 
-export function DataPanel({ things, onImport, onClose }: DataPanelProps) {
+export function DataPanel({ things, appData, onImport, onClose }: DataPanelProps) {
   const { t, tc } = useI18n()
 
   /**
@@ -62,7 +69,12 @@ export function DataPanel({ things, onImport, onClose }: DataPanelProps) {
       const looksLikeJson = text.trim().startsWith('{') || text.trim().startsWith('[')
       const source: 'csv' | 'json' = looksLikeJson ? 'json' : 'csv'
 
-      const result = source === 'json' ? normalizeThings(JSON.parse(text)) : csvToThings(text)
+      // A JSON backup is read as a whole app — things, categories and which
+      // category is default. A CSV only ever carries things.
+      const parsed = source === 'json' ? normalizeAppData(JSON.parse(text)) : null
+      const result = parsed
+        ? { things: parsed.data.things, warnings: parsed.warnings }
+        : csvToThings(text)
 
       if (result.things.length === 0) {
         // Report the import's own explanation when it has one, since it is
@@ -75,7 +87,18 @@ export function DataPanel({ things, onImport, onClose }: DataPanelProps) {
         return
       }
 
-      setPending({ filename: file.name, source, things: result.things, warnings: result.warnings })
+      setPending({
+        filename: file.name,
+        source,
+        things: result.things,
+        warnings: result.warnings,
+        data: parsed
+          ? {
+              categories: parsed.data.categories,
+              defaultCategoryId: parsed.data.defaultCategoryId,
+            }
+          : undefined,
+      })
     } catch {
       setError(t('data.importUnreadable'))
     } finally {
@@ -88,7 +111,7 @@ export function DataPanel({ things, onImport, onClose }: DataPanelProps) {
     const stamp = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
     downloadTextFile(
       `${stamp}-eventstracker-backup.json`,
-      buildExportJson(things),
+      buildExportJson(appData),
       'application/json',
     )
   }
@@ -160,7 +183,7 @@ export function DataPanel({ things, onImport, onClose }: DataPanelProps) {
                   type="button"
                   className="button button--primary"
                   onClick={() => {
-                    onImport(pending.things, pending.warnings)
+                    onImport(pending.things, pending.warnings, pending.data)
                     setPending(null)
                   }}
                 >
