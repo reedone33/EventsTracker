@@ -237,7 +237,9 @@ Keyboard: tab to a tile, press space, use the arrow keys, press space to drop.
 
 ## The toolbar
 
-Five icons, the way the iOS app's toolbar worked:
+The app name sits on its own line, with five icons on the line beneath it —
+the same arrangement the iOS toolbar had, but stacked so nothing is squeezed on
+a narrow phone.
 
 | Icon | What it does |
 | --- | --- |
@@ -258,3 +260,19 @@ location being recorded. The icons are 44px, the size a fingertip reliably hits.
 
 Choosing **Edit** from the menu also switches to the Things screen, since
 editing only means anything there.
+
+## Staying clear of the phone's own furniture
+
+Installed on an iPhone, this app draws behind the status bar so its colour runs
+to the very top of the screen. Without care, the clock and battery would sit on
+top of the app's heading.
+
+The layout adds `env(safe-area-inset-*)` to its padding — the browser's own
+measurement of how much room the phone needs at each edge: status bar or notch
+at the top, home indicator at the bottom, rounded corners in landscape. The main
+page, the dialogs and the undo toast all use it.
+
+This only works because `index.html` sets `viewport-fit=cover`. Without that,
+the insets all report zero and the padding silently does nothing.
+
+On a desktop every inset is zero, so the layout is unchanged there.
