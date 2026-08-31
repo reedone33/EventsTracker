@@ -98,14 +98,16 @@ export function isSameDay(a: Date, b: Date): boolean {
 }
 
 /**
- * How the tile shows the most recent log, matching the iOS app's rule:
- * a time if it happened today, otherwise a short date.
+ * How a tile shows when something was last tracked: always the full date.
+ *
+ * The iOS app showed a TIME for anything logged today and a date otherwise.
+ * That reads oddly on a grid where most tiles show dates and one shows
+ * "12:37 PM", and it hides the date on exactly the tile you just touched.
+ * A date on every tile means they can all be compared at a glance.
+ *
+ * The exact time is still on the detail screen, next to every entry.
  */
 export function formatLastLogDate(date: Date): string {
-  const now = new Date()
-  if (isSameDay(date, now)) {
-    return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  }
   return date.toLocaleDateString(undefined, {
     month: 'numeric',
     day: 'numeric',
