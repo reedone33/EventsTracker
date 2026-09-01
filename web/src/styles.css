@@ -284,7 +284,9 @@ body {
   aspect-ratio: 1 / 1; /* Keeps tiles square at any width. */
   border: 2px solid var(--border);
   border-radius: 12px;
-  padding: 12px;
+  /* No padding here on purpose: .tile__content is pinned inside instead,
+     which avoids a Safari bug that clipped the bottom line. */
+  padding: 0;
   cursor: pointer;
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -296,12 +298,14 @@ body {
 .tile:disabled { cursor: default; }
 
 .tile__content {
-  position: relative;
+  /* Pinned 12px inside the tile on all four sides. This replaces the old
+     "height: 100%", which Safari measured incorrectly inside a <button>. */
+  position: absolute;
+  inset: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
   text-align: center;
   gap: 6px;
 }
@@ -311,10 +315,16 @@ body {
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
+  /* The only part allowed to shrink, so a very long name is trimmed
+     rather than pushing the date off the bottom of the tile. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.tile__count { font-size: 2.6rem; font-weight: 800; line-height: 1; }
-.tile__last { font-size: 0.75rem; opacity: 0.82; }
+/* flex-shrink: 0 keeps these two at full size whatever the name does. */
+.tile__count { font-size: 2.6rem; font-weight: 800; line-height: 1; flex-shrink: 0; }
+.tile__last { font-size: 0.75rem; opacity: 0.82; flex-shrink: 0; }
 
 .tile--add {
   background: transparent;
