@@ -51,11 +51,15 @@ export function ThingTile({ thing, isEditing, onLog, onOpen, onEdit, onDelete }:
       >
         <span className="tile__content">
           <span className="tile__name">{thing.name}</span>
-          <span className="tile__count">{thing.logs.length === 0 ? '—' : thing.logs.length}</span>
-          <span className="tile__last">
-            {lastDate
-              ? t('tile.last', { time: formatLastLogDate(lastDate) })
-              : t('tile.never')}
+          {/* The count and the date are one group so the date always sits
+              immediately under the number, however tall the name is. */}
+          <span className="tile__stat">
+            <span className="tile__count">{thing.logs.length === 0 ? '—' : thing.logs.length}</span>
+            <span className="tile__last">
+              {lastDate
+                ? t('tile.last', { time: formatLastLogDate(lastDate) })
+                : t('tile.never')}
+            </span>
           </span>
         </span>
       </button>

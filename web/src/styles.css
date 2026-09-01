@@ -305,9 +305,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  /* Name sits at the top; the number-and-date group takes the space below. */
+  justify-content: flex-start;
   text-align: center;
   gap: 6px;
+}
+
+/* Wraps the count and the date. It fills whatever room the name leaves and
+   centres the pair inside it, keeping the date tucked under the number. */
+.tile__stat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .tile__name {
@@ -324,7 +337,7 @@ body {
 
 /* flex-shrink: 0 keeps these two at full size whatever the name does. */
 .tile__count { font-size: 2.6rem; font-weight: 800; line-height: 1; flex-shrink: 0; }
-.tile__last { font-size: 0.75rem; opacity: 0.82; flex-shrink: 0; }
+.tile__last { font-size: 0.95rem; font-weight: 600; line-height: 1.2; opacity: 0.9; flex-shrink: 0; }
 
 .tile--add {
   background: transparent;
